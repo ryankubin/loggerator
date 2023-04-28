@@ -2,12 +2,14 @@ from flask_pymongo import PyMongo
 import pymongo
 from flask import jsonify
 
+from exceptions import InvalidAPIParams
+
 mongo = PyMongo()
 
 
 def create_logs(logs, count):
     mongo.db.logs.insert_many(logs)
-    return jsonify(inserted_logs = count, success=True), 201
+    return jsonify(inserted_logs=count, success=True), 201
 
 
 def get_logs(filters, page=1, limit=100):
@@ -18,7 +20,7 @@ def get_logs(filters, page=1, limit=100):
         page = int(page)
         limit = int(limit)
     except ValueError:
-        return "Page and limit should be provided as integers "
+        raise InvalidAPIParams("Page and limit should be provided as integers ")
     logs = list(cursor.skip((page - 1) * limit).limit(limit))
     count = len(logs)
     # Could get total log count and calculate EXACT end, but overkill when dealing with larger data set like logs

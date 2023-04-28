@@ -1,10 +1,11 @@
 from flask import Flask, Response, jsonify, request
 import asyncio
-
 from datetime import datetime
+
 from log_stream import stream_logs
 from config import *
 from db import mongo, get_logs, delete_logs
+from exceptions import InvalidAPIParams, ServerResponseError
 
 
 def create_app():
@@ -63,13 +64,29 @@ def create_app():
         port = params.get("port", LOGGER_PORT)
         timeout = params.get("timeout", 1)
 
+        # Check port value
+        try:
+            if not 1 <= port <= 65535:
+                raise InvalidAPIParams(
+                    "Port must be an integer between 1 and 65535 inclusive"
+                )
+        except:
+            raise InvalidAPIParams(
+                "Port must be an integer between 1 and 65535 inclusive"
+            )
+
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
         # Connect and run through transmitted logs
-        loop.run_until_complete(stream_logs(host, port, timeout, loop))
+        try:
+            loop.run_until_complete(stream_logs(host, port, timeout, loop))
+        except (ConnectionRefusedError, OSError, TimeoutError):
+            raise ServerResponseError(
+                "Issue connecting to log server, please check config settings"
+            )
         return (
             jsonify(
                 host=host,
@@ -90,5 +107,14 @@ def create_app():
         """
         # Delete existing logs to start fresh
         return jsonify(delete_logs()), 202
+
+    # Exception definitions
+    @app.errorhandler(ServerResponseError)
+    def server_response_error(e):
+        return jsonify(e.to_dict()), e.status_code
+
+    @app.errorhandler(InvalidAPIParams)
+    def invalid_api_params(e):
+        return jsonify(e.to_dict()), e.status_code
 
     return app
