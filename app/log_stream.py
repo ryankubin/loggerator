@@ -1,5 +1,6 @@
 import asyncio
 import socket
+
 from config import BATCH_SIZE
 from dateutil import parser
 from db import create_logs
@@ -29,16 +30,17 @@ async def stream_logs(host, port, timeout, loop):
             if not line:
                 break
             log_counter += 1
-            log = process_log(line.decode('utf-8'))
+            log = process_log(line.decode("utf-8"))
             logs.append(log)
             if log_counter == BATCH_SIZE:
                 create_logs(logs)
                 logs = []
         except asyncio.TimeoutError:
-            print('Timed out')
+            print("Timed out")
             break
     if logs:
         create_logs(logs)
+
 
 def process_log(log):
     # logs have datetime set in a non-standard way
@@ -52,9 +54,11 @@ def process_log(log):
     # remote user, common log format
     # primary usecase and provided examples, so running the logic for this
     # Could have separate tracks depending on contents if we expected nonconformity
-    #component_count = len(split_log)
-    #if component_count == 11:
-    apache_log_date = parser.parse(split_log[3][1:] + ' ' + split_log[4] + split_log[5][:-1])
+    # component_count = len(split_log)
+    # if component_count == 11:
+    apache_log_date = parser.parse(
+        split_log[3][1:] + " " + split_log[4] + split_log[5][:-1]
+    )
     data = {
         "ip_address": split_log[0],
         "user": split_log[2],
@@ -64,8 +68,7 @@ def process_log(log):
         "protocol": split_log[8],
         "code": split_log[9],
         "bytes_sent": split_log[10],
-        "raw": log
-        }
+        "raw": log,
+    }
 
     return data
-
