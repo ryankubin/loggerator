@@ -10,6 +10,8 @@ from db import mongo, get_logs, delete_logs
 def create_app():
     # Create/ the app
     app = Flask(__name__)
+    # Update values in docker-compose.yml and config.py for security purposes
+    # Provided settings should work as a base
     app.config[
         "MONGO_URI"
     ] = f"mongodb://{MONGO_DB_USER}:{MONGO_DB_PASS}@{MONGO_DB_HOST}:{MONGO_DB_PORT}/{MONGO_DB_DATABASE}?authSource={MONGO_DB_AUTH_SOURCE}"
@@ -34,20 +36,29 @@ def create_app():
 
         return get_logs(filters, page, limit)
 
-
-    @app.route("/get_logs/", strict_slashes=False, methods=["GET"])
-    def receive_logs():
-        # Retrieve any provided parameters
-        host = request.args.get("host", default=LOGGER_HOST, type=str)
-        port = request.args.get("port", default=LOGGER_PORT, type=int)
-        timeout = request.args.get("timeout", default=1, type=int)
+    # non-standard route to kickoff data connection
+    # hit this AFTER the loggerator server is running to grab your logs
+    @app.route("/logs/", strict_slashes=False, methods=["POST"])
+    def retrieve_logs():
+        """
+        :param host:
+        :param port:
+        :param timeout:
+        :return: Ingestion complete message including provided parameters and time completed.
+        :rtype: json
+        """
+        # Retrieve any provided parameters for the target server
+        params = request.get_json()
+        host = params.get("host", default=LOGGER_HOST, type=str)
+        port = params.get("port", default=LOGGER_PORT, type=int)
+        timeout = params.get("timeout", default=1, type=int)
 
         try:
             loop = asyncio.get_event_loop()
         except RuntimeError:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-
+        # Connect and run through transmitted logs
         loop.run_until_complete(stream_logs(host, port, timeout, loop))
         return (
             jsonify(
