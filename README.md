@@ -102,7 +102,7 @@ Any number and combination of filter parameters are available.  Exact matches on
 Result returns whole log enties in descending order by date.  Also provided are total count, and a next value to paginate forward (if applicable)  
 
 ### Testing
-To run the provided tests, execute the following from within the app directory:  
+To run the provided tests, execute the following from within the `app` directory:  
 `python -m unittest tests_logs.py`  
 There are gaps around testing the db, as I have less familiarity with mongo and how to mock it in flask.  Requires additional tests around CRUD operations.
 
