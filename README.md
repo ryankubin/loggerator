@@ -1,4 +1,6 @@
 # loggerator - Ingest and view your logs
+## Thoughts
+I decided to use python/flask, which was a technology I'm familiar with, and mongodb, one that I haven't used before.  Better approach for timeseries data like logs, with little need for relationships (in scope or out of scope).  I used flask as both the backend for connecting and ingesting the logs, and serving the logs to the end consumer.  In retrospect, separating ingestion and services may have made more sense, with flask specifically; its not multithreaded without significantly more work, which can slow down the ingestion process and make the async process a bit more finicky.
 
 ## Setup  
 ### Log Server  
