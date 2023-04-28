@@ -72,7 +72,7 @@ def process_log(log):
         "protocol": split_log[8],
         "code": split_log[9],
         "bytes_sent": split_log[10],
-        "raw": log,
+        "raw": log.strip(),
     }
 
     return data

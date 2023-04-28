@@ -20,6 +20,16 @@ def create_app():
     # Register routes
     @app.route("/logs/", strict_slashes=False, methods=["GET"])
     def show_logs():
+        """
+        Designed to take in ALL filters, but pop out page/limit for pagination
+        Could limit to schema provided, or even a shorter list (provided requirements for example)
+        For security/kidproofing requests
+        :param page: Paginated results to provide
+        :param limit: Number of results provided at once
+        :param *: query filters to be applied to the result set
+        :return: dataset of raw received logs, count of logs provided,
+        and (if applicable) the next URL
+        """
         request_args = request.args.to_dict()
         if request_args.get("page"):
             page = request_args.pop("page")
@@ -41,17 +51,17 @@ def create_app():
     @app.route("/logs/", strict_slashes=False, methods=["POST"])
     def retrieve_logs():
         """
-        :param host:
-        :param port:
-        :param timeout:
+        :param host: Host to connect to
+        :param port: Host's port
+        :param timeout: Timeout in case of ingestion issues
         :return: Ingestion complete message including provided parameters and time completed.
         :rtype: json
         """
         # Retrieve any provided parameters for the target server
         params = request.get_json()
-        host = params.get("host", default=LOGGER_HOST, type=str)
-        port = params.get("port", default=LOGGER_PORT, type=int)
-        timeout = params.get("timeout", default=1, type=int)
+        host = params.get("host", LOGGER_HOST)
+        port = params.get("port", LOGGER_PORT)
+        timeout = params.get("timeout", 1)
 
         try:
             loop = asyncio.get_event_loop()
@@ -70,10 +80,15 @@ def create_app():
             201,
         )
 
-
+    # Would want to add authorization to this endpoint (shocking)
     @app.route("/logs/", strict_slashes=False, methods=["DELETE"])
     def remove_logs():
-        # Delete existing logs to start fres
-        return Response(delete_logs(), 202, mimetype="application/json")
+        """
+        Remove all logs from the db
+        :return: success message along with number of logs deleted
+        :rtype: json
+        """
+        # Delete existing logs to start fresh
+        return jsonify(delete_logs()), 202
 
     return app
