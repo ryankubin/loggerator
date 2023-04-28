@@ -1,6 +1,5 @@
 import asyncio
 import socket
-
 from config import BATCH_SIZE
 from dateutil import parser
 from db import create_logs
@@ -33,13 +32,13 @@ async def stream_logs(host, port, timeout, loop):
             log = process_log(line.decode("utf-8"))
             logs.append(log)
             if log_counter == BATCH_SIZE:
-                create_logs(logs)
+                create_logs(logs, log_counter)
                 logs = []
         except asyncio.TimeoutError:
             print("Timed out")
             break
     if logs:
-        create_logs(logs)
+        create_logs(logs, log_counter)
 
 
 def process_log(log):

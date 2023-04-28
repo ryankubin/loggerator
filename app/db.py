@@ -1,12 +1,13 @@
 from flask_pymongo import PyMongo
 import pymongo
+from flask import jsonify
 
 mongo = PyMongo()
 
 
-def create_logs(logs):
+def create_logs(logs, count):
     mongo.db.logs.insert_many(logs)
-    return True
+    return jsonify(inserted_logs = count, success=True), 201
 
 
 def get_logs(filters, page=1, limit=100):
@@ -18,8 +19,15 @@ def get_logs(filters, page=1, limit=100):
         limit = int(limit)
     except ValueError:
         return "Page and limit should be provided as integers "
-    logs = cursor.skip((page - 1) * limit).limit(limit)
-    return {[d["raw"] for d in list(logs)]}
+    logs = list(cursor.skip((page - 1) * limit).limit(limit))
+    count = len(logs)
+    # Could get total log count and calculate EXACT end, but overkill when dealing with larger data set like logs
+    # having an empty next seems reasonable in this edge case
+    if count == limit:
+        next = f"/logs?page={page+1}&limit={limit}"
+    else:
+        next = None
+    return {"logs": [d["raw"] for d in logs], "count": count, "next": next}
 
 
 def delete_logs():
