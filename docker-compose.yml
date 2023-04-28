@@ -1,0 +1,27 @@
+version: '3'
+services:
+  log_explorer:
+    build: .
+    container_name: log_explorer
+    ports:
+      - "8000:8000"
+      - "5050:5050"
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    links:
+      - db
+    network_mode: bridge
+  db:
+    image: mongo:latest
+    hostname: log_mongodb
+    environment:
+      - MONGO_INITDB_DATABASE=log_db
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+    volumes:
+      - ./init-db.js:/docker-entrypoint-initdb.d/init-db.js:ro
+    ports:
+      - 27017:27017
+    network_mode: bridge
